@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/NGDeepakDevops/Docker-Integration.git'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t netflix .'
+            }
+        }
+        stage("Scanning Docker Image"){
+			steps{
+				sh "trivy image netflix:latest"
+			}
+		}
+		stage("Docker Image tag and Push"){
+			steps{
+				script{
+				    withDockerRegistry(credentialsId: 'dockerlogin') {
+				    sh "docker tag netflix nagarjunadeepak/netflix:latest"
+				    sh "docker push nagarjunadeepak/netflix:latest"
+				    }
+				}
+			
+			}
+		}
+		stage('Run Docker Container') {
+            steps {
+                sh 'docker run -itd --name netflix-app -p 4000:80 nagarjunadeepak/netflix:latest'
+            }
+        }
+    }
+}
